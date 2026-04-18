@@ -10,7 +10,23 @@ import User from "../models/User.js";
 // 6. If invalid → return 401
 
 const authMiddleware = async (req, res, next) => {
-  //  implement here
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") && authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ message: "No token provided" });
+  }
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(payload.id);
+    if (!user) throw new Error();
+
+    req.user = user;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
 };
 
 export default authMiddleware;
